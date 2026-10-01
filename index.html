@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANAC | Painel de Monitoramento Operacional & Regulatório</title>
+    
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Configuration (Design System) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        anac: {
+                            blue: '#0F3354',
+                            light: '#F8FAFC',
+                            bgStart: '#E2E8F0',
+                            bgEnd: '#F8FAFC',
+                            green: '#10B981',
+                            greenBg: '#D1FAE5',
+                            slate: '#94A3B8',
+                            activeTab: '#38BDF8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* SPA Tab Transitions */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: flex;
+            opacity: 1;
+        }
+        
+        /* Pipeline Animations (Esteira Operacional) */
+        @keyframes data-flow-horizontal {
+            0% { transform: translateX(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateX(200%); opacity: 0; }
+        }
+        .animate-data-flow {
+            animation: data-flow-horizontal 2s linear infinite;
+        }
+        
+        @keyframes data-flow-vertical {
+            0% { transform: translateY(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(200%); opacity: 0; }
+        }
+        .animate-data-flow-vertical {
+            animation: data-flow-vertical 2s linear infinite;
+        }
+    </style>
+</head>
+<!-- Ajuste 1: Trocado min-h-screen por h-screen para travar a tela externa e permitir scroll na área interna -->
+<body class="bg-gradient-to-b from-anac-bgStart to-anac-bgEnd h-screen flex flex-col font-sans text-slate-800 overflow-hidden">
+
+    <!-- 4.1 Header (Topo Institucional) -->
+    <header class="bg-anac-blue text-anac-light flex justify-between items-end px-6 pt-4 shadow-md z-10 shrink-0">
+        <div class="flex items-center gap-4 pb-4">
+            <!-- Logo Oficial ANAC -->
+            <img src="logo_anac.png" alt="Logo ANAC" class="h-14 w-auto object-contain drop-shadow-md" />
+            <div>
+                <h1 class="font-bold text-lg tracking-wide">ANAC | PAINEL DE MONITORAMENTO OPERACIONAL & REGULATÓRIO</h1>
+                <h2 class="text-xs text-anac-slate tracking-widest uppercase mt-0.5 font-medium">Agência Nacional de Aviação Civil • Brasil</h2>
+            </div>
+        </div>
+
+        <!-- Navegação de Abas -->
+        <nav class="flex gap-1">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="flex items-center gap-2 px-5 py-3 border-b-4 border-anac-activeTab bg-white/5 text-anac-light text-sm font-semibold transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Dashboard
+            </button>
+            <button onclick="switchTab('sobre')" id="btn-sobre" class="flex items-center gap-2 px-5 py-3 border-b-4 border-transparent hover:bg-white/5 text-anac-slate hover:text-anac-light text-sm font-medium transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Sobre o Projeto
+            </button>
+        </nav>
+    </header>
+
+    <!-- Barra de Telemetria -->
+    <div class="bg-white border-b border-gray-200 px-6 py-2 flex items-center shadow-sm z-0 shrink-0">
+        <div class="bg-anac-greenBg text-[#065F46] text-xs font-semibold px-3 py-1.5 rounded-full flex items-center gap-2 border border-[#A7F3D0]">
+            <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-anac-green opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-anac-green"></span>
+            </span>
+            Conexão ao Azure SQL Server Ativa
+        </div>
+    </div>
+
+    <!-- 4.2 Main Container (Ajuste 2: min-h-0 é essencial para garantir rolagem interna em containers flex) -->
+    <main class="flex-1 w-full relative min-h-0 bg-white">
+        
+        <!-- Aba 1: Dashboard Operacional (Iframe Placeholder) -->
+        <section id="tab-dashboard" class="tab-content active absolute inset-0 flex-col bg-gray-50">
+            <!-- Placeholder para Fase 2 -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                    <p class="text-gray-500 font-semibold text-lg">Área do Power BI Embedded</p>
+                    <p class="text-gray-400 text-sm mt-1">Aguardando integração (Fase 2 do Roadmap)</p>
+                </div>
+            </div>
+            <!-- O iframe real. Na Fase 2, basta inserir o src do PowerBI aqui -->
+            <iframe id="pbi-iframe" src="about:blank" class="w-full h-full border-0 z-0"></iframe>
+        </section>
+
+        <!-- Aba 2: Sobre o Projeto -->
+        <!-- Ajuste 3: overflow-y-auto no section em position absolute preenchendo o painel garante a barra de rolagem -->
+        <section id="tab-sobre" class="tab-content absolute inset-0 overflow-y-auto bg-slate-50 p-8 flex-col items-center">
+            <div class="max-w-4xl w-full space-y-8 pb-10">
+                
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-anac-blue">Documentação Executiva</h2>
+                    <p class="text-slate-500 mt-2">Visão geral da arquitetura de dados e papéis da equipe.</p>
+                </div>
+
+                <!-- Card 1: Arquitetura -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="bg-slate-100 px-6 py-4 border-b border-gray-200">
+                        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-anac-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                            </svg>
+                            Arquitetura de Dados
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <p class="text-slate-600 mb-6 leading-relaxed">
+                            O projeto utiliza um fluxo moderno de engenharia de dados (ETL), processando volumetria de dados de voos operacionais e ingerindo-os em um ambiente de nuvem relacional altamente escalável, garantindo a integridade dos indicadores de On-Time Performance (OTP) e Resolução 400.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                                <div class="font-semibold text-slate-800 mb-1">1. Extração (Python)</div>
+                                <div class="text-sm text-slate-500">Leitura de CSVs estruturados via Pandas e SQLite para tratamento dos dados seguindo para ingestão massiva.</div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-100 relative">
+                                <div class="font-semibold text-slate-800 mb-1">2. Armazenamento (Azure SQL)</div>
+                                <div class="text-sm text-slate-500">Star Schema (1 Fato, 3 Dimensões) persistido na nuvem.</div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                                <div class="font-semibold text-slate-800 mb-1">3. Distribuição</div>
+                                <div class="text-sm text-slate-500">Camada semântica consumindo a Azure com renderização integrada em uma aplicação HTML/CSS SPA hospedada no Azure Static Web Apps.</div>
+                            </div>
+                        </div>
+
+                        <!-- Diagrama de Arquitetura Injetado (Esteira Operacional) -->
+                        <div class="mt-10 border-t border-gray-100 pt-8 pb-4 w-full">
+                            <h4 class="text-center font-bold text-slate-700 mb-8 uppercase tracking-widest text-sm flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5 text-anac-activeTab" fill="currentColor" viewBox="0 0 20 20"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" /></svg>
+                                Linha de Esteira Operacional
+                            </h4>
+                            
+                            <!-- Container Fluido Responsivo (Sem barra de rolagem) -->
+                            <div class="w-full flex flex-col md:flex-row items-center justify-between gap-1 mt-8">
+                                
+                                <!-- Step 1: CSV -->
+                                <div class="flex-none w-[75px] md:w-20 lg:w-24 bg-white border border-slate-200 rounded-xl p-2 lg:p-3 flex flex-col items-center text-center shadow-sm relative z-10 hover:-translate-y-1 transition-transform">
+                                    <div class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center mb-1 lg:mb-2">
+                                        <svg viewBox="0 0 24 24" fill="none" class="w-full h-full drop-shadow-sm">
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" fill="#E2E8F0"/>
+                                            <path d="M14 2v6h6" stroke="#94A3B8" stroke-width="2" stroke-linejoin="round"/>
+                                            <rect x="5" y="12" width="14" height="6" rx="1" fill="#10B981"/>
+                                            <text x="7" y="16.5" fill="white" font-family="sans-serif" font-size="4" font-weight="bold">.CSV</text>
+                                        </svg>
+                                    </div>
+                                    <h5 class="font-bold text-slate-800 text-[8px] lg:text-[10px] leading-tight">CSVs Locais</h5>
+                                </div>
+
+                                <!-- Conector 1 -->
+                                <div class="hidden md:flex flex-1 relative items-center justify-center min-w-[20px] h-8 mx-1">
+                                    <span class="absolute bottom-4 text-[7px] lg:text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center leading-tight w-max">Ingestão<br/>Pandas</span>
+                                    <div class="w-full relative flex items-center">
+                                        <div class="w-full h-[3px] bg-slate-100 overflow-hidden rounded-full">
+                                            <div class="h-full bg-gradient-to-r from-transparent via-blue-500 to-transparent w-full animate-data-flow"></div>
+                                        </div>
+                                        <div class="absolute -right-1 text-slate-300 bg-white rounded-full"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3l7 7-7 7V3z"/></svg></div>
+                                    </div>
+                                </div>
+                                <div class="md:hidden flex flex-col items-center relative h-12 w-full my-2">
+                                    <span class="absolute top-1/2 -translate-y-1/2 translate-x-3 text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center">Ingestão / Pandas</span>
+                                    <div class="h-full w-[3px] bg-slate-100 overflow-hidden rounded-full relative">
+                                        <div class="w-full h-full bg-gradient-to-b from-transparent via-blue-500 to-transparent animate-data-flow-vertical"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 2: Python -->
+                                <div class="flex-none w-[75px] md:w-20 lg:w-24 bg-white border border-slate-200 rounded-xl p-2 lg:p-3 flex flex-col items-center text-center shadow-sm relative z-10 hover:border-blue-300 hover:-translate-y-1 transition-all">
+                                    <div class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center mb-1 lg:mb-2">
+                                        <svg viewBox="0 0 110 110" class="w-full h-full drop-shadow-sm">
+                                            <path d="M53.7,8.2C25.1,8.2,25.6,20.6,25.6,20.6l0.1,12.9h28.7v4.1H25.3c-19.4,0-20.1,18.8-20.1,18.8 s-0.5,19.3,18.8,19.3h8.3v-13c0-7.3,6.2-13.3,13.6-13.3h19.8c7.4,0,13.4-5.9,13.4-13.1V21.6C79.1,11.3,60.7,8.2,53.7,8.2z M39.3,16 c2.4,0,4.4,1.9,4.4,4.2c0,2.3-2,4.2-4.4,4.2c-2.4,0-4.4-1.9-4.4-4.2C34.9,17.9,36.9,16,39.3,16z" fill="#3776AB"/>
+                                            <path d="M55.7,101.8c28.6,0,28.1-12.4,28.1-12.4l-0.1-12.9H55v-4.1h29.2c19.4,0,20.1-18.8,20.1-18.8 s0.5-19.3-18.8-19.3h-8.3v13c0,7.3-6.2,13.3-13.6,13.3H43.8c-7.4,0-13.4,5.9-13.4,13.1V88C30.4,98.3,48.7,101.8,55.7,101.8z M70.1,94.1c-2.4,0-4.4-1.9-4.4-4.2c0-2.3,2-4.2,4.4-4.2c2.4,0,4.4,1.9,4.4,4.2C74.5,92.2,72.5,94.1,70.1,94.1z" fill="#FFD43B"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="font-bold text-slate-800 text-[8px] lg:text-[10px] leading-tight">Python ETL</h5>
+                                </div>
+
+                                <!-- Conector 2 -->
+                                <div class="hidden md:flex flex-1 relative items-center justify-center min-w-[20px] h-8 mx-1">
+                                    <span class="absolute bottom-4 text-[7px] lg:text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center leading-tight w-max">Carga<br/>Bulk Insert</span>
+                                    <div class="w-full relative flex items-center">
+                                        <div class="w-full h-[3px] bg-slate-100 overflow-hidden rounded-full">
+                                            <div class="h-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent w-full animate-data-flow" style="animation-delay: 0.4s"></div>
+                                        </div>
+                                        <div class="absolute -right-1 text-slate-300 bg-white rounded-full"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3l7 7-7 7V3z"/></svg></div>
+                                    </div>
+                                </div>
+                                <div class="md:hidden flex flex-col items-center relative h-12 w-full my-2">
+                                    <span class="absolute top-1/2 -translate-y-1/2 translate-x-3 text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center">Carga / Bulk</span>
+                                    <div class="h-full w-[3px] bg-slate-100 overflow-hidden rounded-full relative">
+                                        <div class="w-full h-full bg-gradient-to-b from-transparent via-cyan-400 to-transparent animate-data-flow-vertical" style="animation-delay: 0.4s"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 3: Azure SQL -->
+                                <div class="flex-none w-[75px] md:w-20 lg:w-24 bg-white border border-slate-200 rounded-xl p-2 lg:p-3 flex flex-col items-center text-center shadow-md relative z-10 hover:border-cyan-400 hover:-translate-y-1 transition-all">
+                                    <div class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center mb-1 lg:mb-2 shadow-[0_0_12px_rgba(0,188,242,0.3)] rounded-full bg-blue-50/50">
+                                        <svg viewBox="0 0 24 24" class="w-[80%] h-[80%]" fill="none">
+                                            <ellipse cx="12" cy="6" rx="7" ry="2.5" fill="#00BCF2"/>
+                                            <path d="M5 6v12c0 1.38 3.13 2.5 7 2.5s7-1.12 7-2.5V6H5z" fill="#0078D4"/>
+                                            <ellipse cx="12" cy="10.5" rx="7" ry="2.5" fill="#005A9E"/>
+                                            <ellipse cx="12" cy="15" rx="7" ry="2.5" fill="#004578"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="font-bold text-slate-800 text-[8px] lg:text-[10px] leading-tight">Azure SQL</h5>
+                                </div>
+
+                                <!-- Conector 3 -->
+                                <div class="hidden md:flex flex-1 relative items-center justify-center min-w-[20px] h-8 mx-1">
+                                    <span class="absolute bottom-4 text-[7px] lg:text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center leading-tight w-max">Semantic<br/>Model</span>
+                                    <div class="w-full relative flex items-center">
+                                        <div class="w-full h-[3px] bg-slate-100 overflow-hidden rounded-full">
+                                            <div class="h-full bg-gradient-to-r from-transparent via-yellow-400 to-transparent w-full animate-data-flow" style="animation-delay: 0.8s"></div>
+                                        </div>
+                                        <div class="absolute -right-1 text-slate-300 bg-white rounded-full"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3l7 7-7 7V3z"/></svg></div>
+                                    </div>
+                                </div>
+                                <div class="md:hidden flex flex-col items-center relative h-12 w-full my-2">
+                                    <span class="absolute top-1/2 -translate-y-1/2 translate-x-3 text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center">Semantic Model</span>
+                                    <div class="h-full w-[3px] bg-slate-100 overflow-hidden rounded-full relative">
+                                        <div class="w-full h-full bg-gradient-to-b from-transparent via-yellow-400 to-transparent animate-data-flow-vertical" style="animation-delay: 0.8s"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 4: Power BI -->
+                                <div class="flex-none w-[75px] md:w-20 lg:w-24 bg-white border border-slate-200 rounded-xl p-2 lg:p-3 flex flex-col items-center text-center shadow-sm relative z-10 hover:border-yellow-400 hover:-translate-y-1 transition-all">
+                                    <div class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center mb-1 lg:mb-2">
+                                        <svg viewBox="0 0 24 24" class="w-full h-full drop-shadow-sm" fill="none">
+                                            <rect x="15" y="4" width="5" height="16" rx="1" fill="#E8B00D"/>
+                                            <rect x="9.5" y="9" width="5" height="11" rx="1" fill="#F0CD3C"/>
+                                            <rect x="4" y="13" width="5" height="7" rx="1" fill="#F8E591"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="font-bold text-slate-800 text-[8px] lg:text-[10px] leading-tight">Power BI</h5>
+                                </div>
+
+                                <!-- Conector 4 -->
+                                <div class="hidden md:flex flex-1 relative items-center justify-center min-w-[20px] h-8 mx-1">
+                                    <span class="absolute bottom-4 text-[7px] lg:text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center leading-tight w-max">Embedded<br/>API</span>
+                                    <div class="w-full relative flex items-center">
+                                        <div class="w-full h-[3px] bg-slate-100 overflow-hidden rounded-full">
+                                            <div class="h-full bg-gradient-to-r from-transparent via-emerald-400 to-transparent w-full animate-data-flow" style="animation-delay: 1.2s"></div>
+                                        </div>
+                                        <div class="absolute -right-1 text-slate-300 bg-white rounded-full"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3l7 7-7 7V3z"/></svg></div>
+                                    </div>
+                                </div>
+                                <div class="md:hidden flex flex-col items-center relative h-12 w-full my-2">
+                                    <span class="absolute top-1/2 -translate-y-1/2 translate-x-3 text-[8px] font-bold text-slate-500 uppercase tracking-wider text-center">Embedded API</span>
+                                    <div class="h-full w-[3px] bg-slate-100 overflow-hidden rounded-full relative">
+                                        <div class="w-full h-full bg-gradient-to-b from-transparent via-emerald-400 to-transparent animate-data-flow-vertical" style="animation-delay: 1.2s"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 5: Web App -->
+                                <div class="flex-none w-[75px] md:w-20 lg:w-24 bg-white border border-slate-200 rounded-xl p-2 lg:p-3 flex flex-col items-center text-center shadow-sm relative z-10 hover:border-emerald-400 hover:-translate-y-1 transition-all">
+                                    <div class="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center mb-1 lg:mb-2">
+                                        <svg viewBox="0 0 24 24" class="w-full h-full drop-shadow-sm" fill="none">
+                                            <rect x="2" y="4" width="20" height="16" rx="2" fill="#0F3354" stroke="none"/>
+                                            <rect x="2" y="4" width="20" height="4" rx="2" fill="#38BDF8" stroke="none"/>
+                                            <circle cx="5" cy="6" r="1.5" fill="white"/>
+                                            <circle cx="9" cy="6" r="1.5" fill="white"/>
+                                            <path d="M6 16l4-4 3 3 5-5" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            <circle cx="18" cy="10" r="1" fill="#10B981"/>
+                                        </svg>
+                                    </div>
+                                    <h5 class="font-bold text-slate-800 text-[8px] lg:text-[10px] leading-tight">Painel Web</h5>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Data Squad (Equipe) -->
+                <!-- Card 2: Data Squad (Equipe) -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
+                    <div class="bg-slate-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-anac-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Data Squad
+                        </h3>
+                        <span class="text-[10px] uppercase tracking-widest text-anac-blue font-bold bg-anac-blue/10 px-2 py-1 rounded border border-anac-blue/20">Core Team</span>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            
+                            <!-- Membro: GV -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">GV</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Gabriel Vieira</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">Lead Analytics Eng.</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Azure SQL</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Python</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Membro: AR -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">AR</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Alef Reis</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">Data Engineer</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">ETL Pipelines</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">T-SQL</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Membro: EL -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">EL</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Evelin Lins</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">BI Developer</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Power BI</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">DAX</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Membro: RS -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">RS</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Roberta Salyna</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">Data Governance Analyst</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Compliance</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Data Catalog</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Membro: AC -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">AC</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Anna Callejon</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">Data QA & Doc</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Data Quality</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Testing</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Membro: DS -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">DS</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Douglas Serafim</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">ETL Developer</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Pandas</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">SQL</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Membro: LS -->
+                            <div class="group bg-white border border-slate-200 rounded-xl p-4 flex flex-row items-center gap-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-300 relative overflow-hidden md:col-span-2 lg:col-span-1 lg:col-start-2">
+                                <a href="#" class="absolute top-3 right-3 text-slate-400 hover:text-[#0A66C2] transition-colors z-10" title="LinkedIn"><svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg></a>
+                                <div class="relative flex-none">
+                                    <div class="w-11 h-11 rounded-full bg-blue-50/50 border-2 border-slate-100 flex items-center justify-center text-anac-blue font-bold text-sm transition-all duration-300 group-hover:border-blue-400 group-hover:shadow-[0_0_12px_rgba(59,130,246,0.3)] group-hover:text-blue-600">LS</div>
+                                </div>
+                                <div class="flex-1 min-w-0 pr-4">
+                                    <h4 class="font-bold text-slate-800 truncate text-[13px]">Luana Silva</h4>
+                                    <p class="text-[10px] text-slate-500 font-medium truncate mb-2">Data Product Manager</p>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Scrum</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-medium bg-slate-50 text-slate-600 border border-slate-200">Strategy</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- 4.3 Footer -->
+    <footer class="bg-anac-blue py-3 text-center text-xs text-anac-slate font-medium z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] shrink-0">
+        ANAC - Projeto Risco Operacional @ Generation 2026
+    </footer>
+
+    <!-- Lógica da SPA (Zero Friction) -->
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            const btnDash = document.getElementById('btn-dashboard');
+            const btnSobre = document.getElementById('btn-sobre');
+            
+            const activeClasses = ['border-anac-activeTab', 'bg-white/5', 'text-anac-light', 'font-semibold'];
+            const inactiveClasses = ['border-transparent', 'text-anac-slate', 'font-medium'];
+            
+            if(tabId === 'dashboard') {
+                activeClasses.forEach(c => btnDash.classList.add(c));
+                inactiveClasses.forEach(c => btnDash.classList.remove(c));
+                inactiveClasses.forEach(c => btnSobre.classList.add(c));
+                activeClasses.forEach(c => btnSobre.classList.remove(c));
+                btnDash.classList.remove('hover:bg-white/5', 'hover:text-anac-light');
+                btnSobre.classList.add('hover:bg-white/5', 'hover:text-anac-light');
+            } else {
+                activeClasses.forEach(c => btnSobre.classList.add(c));
+                inactiveClasses.forEach(c => btnSobre.classList.remove(c));
+                inactiveClasses.forEach(c => btnDash.classList.add(c));
+                activeClasses.forEach(c => btnDash.classList.remove(c));
+                btnSobre.classList.remove('hover:bg-white/5', 'hover:text-anac-light');
+                btnDash.classList.add('hover:bg-white/5', 'hover:text-anac-light');
+            }
+        }
+    </script>
+</body>
+</html>
